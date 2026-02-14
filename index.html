@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scale=no">
+    <title>💕 Jeu de Piste Saint-Valentin 💕</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        /* ============================================
+           CSS RESET & VARIABLES
+           ============================================ */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* ── PALETTE ── Modifie ici pour ajuster les couleurs */
+            --rouge-profond: #8B0A1A;
+            --rouge-velours: #A0122A;
+            --rose-poudre: #F2B5C8;
+            --rose-clair: #FADDE1;
+            --rose-blush: #FFF0F3;
+            --blanc-casse: #FFF8F0;
+            --or-doux: #D4A853;
+            --texte-sombre: #2D0A0A;
+            --texte-moyen: #5C1A2A;
+
+            /* ── GLASSMORPHISM ── */
+            --glass-bg: rgba(255, 240, 243, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.35);
+            --glass-shadow: rgba(139, 10, 26, 0.15);
+
+            /* ── TYPOGRAPHIE ── */
+            --font-display: 'Playfair Display', Georgia, serif;
+            --font-body: 'Montserrat', 'Helvetica Neue', sans-serif;
+        }
+
+        /* ============================================
+           FOND & CORPS DE PAGE
+           ============================================ */
+        html {
+            font-size: 16px;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            min-height: 100vh;
+            min-height: 100dvh; /* Dynamic viewport height pour mobile */
+            font-family: var(--font-body);
+            color: var(--texte-sombre);
+            overflow-x: hidden;
+            position: relative;
+
+            /* Dégradé romantique */
+            background: linear-gradient(
+                135deg,
+                #1a0008 0%,
+                #2d0a12 15%,
+                #4a0e1e 30%,
+                #6b1530 50%,
+                #8B0A1A 65%,
+                #a0122a 80%,
+                #6b1530 100%
+            );
+            background-attachment: fixed;
+        }
+
+        /* Texture subtile par-dessus le gradient */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(242, 181, 200, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(212, 168, 83, 0.08) 0%, transparent 40%),
+                radial-gradient(ellipse at 50% 80%, rgba(242, 181, 200, 0.10) 0%, transparent 45%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ============================================
+           CANVAS DE PARTICULES (COEURS)
+           ============================================ */
+        #hearts-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ============================================
+           LAYOUT PRINCIPAL
+           ============================================ */
+        .page-wrapper {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: 24px 16px;
+        }
+
+        /* ============================================
+           BOUTON MUSIQUE (coin supérieur droit)
+           ============================================ */
+        .music-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 240, 243, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: var(--rose-clair);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .music-toggle:hover,
+        .music-toggle:active {
+            background: rgba(255, 240, 243, 0.3);
+            transform: scale(1.08);
+        }
+
+        .music-toggle.playing {
+            animation: pulse-glow 2s ease-in-out infinite;
+            border-color: var(--or-doux);
+            color: var(--or-doux);
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 4px 15px rgba(212, 168, 83, 0.2); }
+            50% { box-shadow: 0 4px 25px rgba(212, 168, 83, 0.5); }
+        }
+
+        /* ============================================
+           NUMÉRO D'ÉTAPE (badge décoratif)
+           ============================================ */
+        .step-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            border-radius: 50px;
+            background: linear-gradient(135deg, var(--rouge-profond), var(--rouge-velours));
+            color: var(--rose-clair);
+            font-family: var(--font-body);
+            font-weight: 600;
+            font-size: 0.8rem;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+            box-shadow:
+                0 4px 15px rgba(139, 10, 26, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        .step-badge i {
+            font-size: 0.7rem;
+        }
+
+        /* ============================================
+           CARTE GLASSMORPHISM PRINCIPALE
+           ============================================ */
+        .card {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            border-radius: 24px;
+            padding: 40px 32px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(1.4);
+            -webkit-backdrop-filter: blur(20px) saturate(1.4);
+            border: 1px solid var(--glass-border);
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.25),
+                0 2px 8px var(--glass-shadow),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            text-align: center;
+
+            /* Animation d'entrée */
+            animation: card-appear 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(30px) scale(0.97);
+        }
+
+        @keyframes card-appear {
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Reflet lumineux décoratif en haut de la carte */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            right: 10%;
+            height: 1px;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.6),
+                transparent
+            );
+            border-radius: 50%;
+        }
+
+        /* ============================================
+           ZONE IMAGE / ICÔNE
+           ============================================ */
+        .card-visual {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(
+                145deg,
+                rgba(242, 181, 200, 0.2),
+                rgba(139, 10, 26, 0.15)
+            );
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 20px rgba(139, 10, 26, 0.2);
+
+            /* Animation subtile de flottement */
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        /* Si on utilise une icône FontAwesome */
+        .card-visual i {
+            font-size: 2.5rem;
+            color: var(--rose-clair);
+            filter: drop-shadow(0 2px 4px rgba(139, 10, 26, 0.3));
+        }
+
+        /* Si on utilise une image */
+        .card-visual img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        /* ============================================
+           TITRE DE L'ÉNIGME
+           ============================================ */
+        .card-title {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--blanc-casse);
+            line-height: 1.3;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-title em {
+            font-style: italic;
+            color: var(--rose-poudre);
+        }
+
+        /* Petit séparateur élégant */
+        .card-divider {
+            width: 50px;
+            height: 2px;
+            margin: 16px auto;
+            border-radius: 2px;
+            background: linear-gradient(90deg, transparent, var(--or-doux), transparent);
+        }
+
+        /* ============================================
+           TEXTE DE L'ÉNIGME / INDICE
+           ============================================ */
+        .card-enigma {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            font-style: italic;
+            color: var(--rose-clair);
+            line-height: 1.7;
+            margin-bottom: 24px;
+            padding: 0 8px;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-description {
+            font-family: var(--font-body);
+            font-weight: 300;
+            font-size: 0.92rem;
+            color: rgba(255, 240, 243, 0.75);
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        /* ============================================
+           BOUTON INDICE SUPPLÉMENTAIRE
+           ============================================ */
+        .hint-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: none;
+            color: rgba(242, 181, 200, 0.5);
+            font-family: var(--font-body);
+            font-size: 0.78rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            margin-bottom: 8px;
+        }
+
+        .hint-toggle:hover,
+        .hint-toggle:active {
+            color: var(--rose-poudre);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .hint-toggle i {
+            font-size: 0.7rem;
+            transition: transform 0.3s ease;
+        }
+
+        .hint-toggle.active i {
+            transform: rotate(180deg);
+        }
+
+        /* Zone d'indice caché */
+        .hint-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                        opacity 0.4s ease,
+                        margin 0.4s ease;
+            opacity: 0;
+            margin-bottom: 0;
+        }
+
+        .hint-content.visible {
+            max-height: 200px;
+            opacity: 1;
+            margin-bottom: 24px;
+        }
+
+        .hint-content p {
+            background: rgba(139, 10, 26, 0.2);
+            border: 1px solid rgba(242, 181, 200, 0.15);
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 300;
+            color: var(--rose-poudre);
+            line-height: 1.6;
+            margin-top: 8px;
+        }
+
+        .hint-content p i {
+            margin-right: 6px;
+            color: var(--or-doux);
+        }
+
+        /* ============================================
+           BOUTON PRINCIPAL (vers l'étape suivante)
+           ============================================ */
+        .card-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 36px;
+            border-radius: 50px;
+            border: none;
+            background: linear-gradient(135deg, var(--rouge-profond), var(--rouge-velours), #c0153a);
+            background-size: 200% 200%;
+            color: var(--blanc-casse);
+            font-family: var(--font-body);
+            font-weight: 600;
+            font-size: 0.92rem;
+            letter-spacing: 1px;
+            text-decoration: none;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow:
+                0 4px 15px rgba(139, 10, 26, 0.4),
+                0 1px 3px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+
+            /* Animation gradient */
+            animation: gradient-shift 4s ease infinite;
+        }
+
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .card-btn:hover,
+        .card-btn:active {
+            transform: translateY(-2px);
+            box-shadow:
+                0 8px 25px rgba(139, 10, 26, 0.5),
+                0 2px 6px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .card-btn:active {
+            transform: translateY(0px);
+        }
+
+        .card-btn i {
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+        }
+
+        .card-btn:hover i {
+            transform: translateX(3px);
+        }
+
+        /* ============================================
+           PETIT MESSAGE EN BAS
+           ============================================ */
+        .footer-love {
+            margin-top: 24px;
+            font-family: var(--font-display);
+            font-style: italic;
+            font-size: 0.8rem;
+            color: rgba(242, 181, 200, 0.3);
+            letter-spacing: 0.5px;
+        }
+
+        .footer-love span {
+            color: rgba(242, 181, 200, 0.45);
+            animation: heartbeat 1.5s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            15% { transform: scale(1.15); }
+            30% { transform: scale(1); }
+            45% { transform: scale(1.1); }
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 480px) {
+            .card {
+                padding: 32px 24px;
+                border-radius: 20px;
+            }
+            .card-title {
+                font-size: 1.5rem;
+            }
+            .card-enigma {
+                font-size: 1rem;
+            }
+            .card-visual {
+                width: 85px;
+                height: 85px;
+            }
+            .card-visual i {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .card {
+                padding: 28px 18px;
+            }
+            .card-title {
+                font-size: 1.35rem;
+            }
+        }
+
+        /* Mode paysage mobile */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .page-wrapper {
+                padding: 16px;
+            }
+            .card {
+                padding: 24px 28px;
+            }
+            .card-visual {
+                width: 60px;
+                height: 60px;
+                margin-bottom: 16px;
+            }
+            .card-visual i {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* ============================================
+           PRÉFÉRENCE MOUVEMENT RÉDUIT
+           ============================================ */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* ============================================
+           ÉCRAN DE CHARGEMENT
+           ============================================ */
+        .loading-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: #1a0008;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-heart {
+            font-size: 2rem;
+            color: var(--rose-poudre);
+            animation: heartbeat 1s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================
+         ÉCRAN DE CHARGEMENT
+         ============================================ -->
+    <div class="loading-screen" id="loader">
+        <div class="loading-heart">💕</div>
+    </div>
+
+    <!-- ============================================
+         CANVAS POUR LA CASCADE DE CŒURS
+         ============================================ -->
+    <canvas id="hearts-canvas"></canvas>
+
+    <!-- ============================================
+         BOUTON MUSIQUE
+         ============================================ -->
+    <button class="music-toggle" id="musicBtn" aria-label="Activer la musique" title="Musique d'ambiance">
+        <i class="fas fa-volume-xmark" id="musicIcon"></i>
+    </button>
+
+    <!--
+        ═══════════════════════════════════════════
+        🎵 AUDIO — Remplace le src par ton URL
+           Formats supportés : .mp3, .ogg, .wav
+           Idée : un morceau doux / piano / lo-fi
+        ═══════════════════════════════════════════
+    -->
+    <audio id="bgMusic" loop preload="auto">
+        <source src="YOUR_MUSIC_URL_HERE.mp3" type="audio/mpeg">
+        <!-- <source src="YOUR_MUSIC_URL_HERE.ogg" type="audio/ogg"> -->
+    </audio>
+
+    <!-- ============================================
+         CONTENU PRINCIPAL
+         ============================================ -->
+    <main class="page-wrapper">
+
+        <!--
+            ╔═══════════════════════════════════════╗
+            ║  🔢 NUMÉRO D'ÉTAPE                    ║
+            ║  Modifie le texte ci-dessous           ║
+            ╚═══════════════════════════════════════╝
+        -->
+        <div class="step-badge">
+            <i class="fas fa-heart"></i>
+            Étape 1 sur 1
+            <i class="fas fa-heart"></i>
+        </div>
+
+        <!-- ── CARTE PRINCIPALE ── -->
+        <article class="card">
+
+            <!--
+                ╔═══════════════════════════════════════╗
+                ║  🖼️ ZONE VISUELLE (Image ou Icône)    ║
+                ║                                        ║
+                ║  OPTION A — Icône FontAwesome :        ║
+                ║    <i class="fas fa-map-marker-alt"></i>║
+                ║                                        ║
+                ║  OPTION B — Image :                    ║
+                ║    <img src="photo.jpg" alt="indice">  ║
+                ║                                        ║
+                ║  Galerie d'icônes :                    ║
+                ║    fa-map-marker-alt, fa-key,          ║
+                ║    fa-envelope-open-text, fa-gift,     ║
+                ║    fa-puzzle-piece, fa-lock-open,      ║
+                ║    fa-star, fa-compass, fa-camera      ║
+                ╚═══════════════════════════════════════╝
+            -->
+            <div class="card-visual">
+                <i class="fas fa-map-marker-alt"></i>
+                <!-- <img src="YOUR_IMAGE_URL.jpg" alt="Indice visuel"> -->
+            </div>
+
+            <!--
+                ╔═══════════════════════════════════════╗
+                ║  📝 TITRE DE L'ÉNIGME                  ║
+                ║  Utilise <em> pour un mot en valeur    ║
+                ╚═══════════════════════════════════════╝
+            -->
+            <h1 class="card-title">
+                Tu es arrivée au bout du chemin. Mon cœur bat pour toi comme celui d'un supporter dans les arrêts de jeu. Merci d'être ma plus belle aventure je t'aime bichette <em>Ton cadeau est caché pas loin du japon</em>
+            </h1>
+
+            <div class="card-divider"></div>
+
+            <!--
+                ╔═══════════════════════════════════════╗
+                ║  🧩 TEXTE DE L'ÉNIGME / INDICE        ║
+                ║  L'indice poétique pour le prochain    ║
+                ║  lieu du jeu de piste                  ║
+                ╚═══════════════════════════════════════╝
+
+                ╔═══════════════════════════════════════╗
+                ║  📖 DESCRIPTION (optionnelle)          ║
+                ║  Contexte, consigne, petit mot doux    ║
+                ╚═══════════════════════════════════════╝
+                ╔═══════════════════════════════════════╗
+                ║  💡 INDICE SUPPLÉMENTAIRE (caché)      ║
+                ║  Modifie le texte dans hint-content    ║
+                ╚═══════════════════════════════════════╝
+
+                ╔═══════════════════════════════════════╗
+                ║  🔗 BOUTON ÉTAPE SUIVANTE              ║
+                ║  Modifie le href vers le fichier       ║
+                ║  de la prochaine étape                 ║
+                ╚═══════════════════════════════════════╝
+
+        </article>
+
+        <!-- Petit message discret -->
+        <p class="footer-love">
+            fait avec <span>♥</span> pour toi
+        </p>
+
+    </main>
+
+    <!-- ============================================
+         JAVASCRIPT
+         ============================================ -->
+    <script>
+        /* ============================================
+           1. ÉCRAN DE CHARGEMENT
+           ============================================ */
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loader').classList.add('hidden');
+            }, 600);
+        });
+
+        /* ============================================
+           2. CASCADE DE CŒURS (Canvas Particles)
+           ============================================ */
+        (() => {
+            const canvas = document.getElementById('hearts-canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Densité de cœurs selon la taille d'écran
+            let hearts = [];
+            let animationId;
+
+            // Redimensionnement responsive
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            // Caractères de cœur possibles
+            const heartChars = ['♥', '♡', '❤', '💕'];
+
+            // Palette de couleurs pour les cœurs
+            const heartColors = [
+                'rgba(242, 181, 200, ',  // rose poudré
+                'rgba(160, 18, 42, ',    // rouge velours
+                'rgba(250, 221, 225, ',  // rose clair
+                'rgba(212, 168, 83, ',   // or doux
+                'rgba(139, 10, 26, ',    // rouge profond
+                'rgba(255, 240, 243, ',  // rose blush
+            ];
+
+            // Calcul du nombre de cœurs selon la largeur
+            function getHeartCount() {
+                const w = window.innerWidth;
+                if (w < 400) return 18;
+                if (w < 768) return 25;
+                return 40;
+            }
+
+            // Créer un cœur
+            function createHeart(startFromTop = false) {
+                const colorBase = heartColors[Math.floor(Math.random() * heartColors.length)];
+                const opacity = 0.15 + Math.random() * 0.45;
+                const size = 10 + Math.random() * 22;
+
+                return {
+                    x: Math.random() * canvas.width,
+                    y: startFromTop
+                        ? -20 - Math.random() * 100
+                        : Math.random() * canvas.height,
+                    size: size,
+                    speedY: 0.2 + Math.random() * 0.8,
+                    speedX: (Math.random() - 0.5) * 0.4,
+                    opacity: opacity,
+                    color: colorBase + opacity + ')',
+                    char: heartChars[Math.floor(Math.random() * heartChars.length)],
+                    wobbleSpeed: 0.005 + Math.random() * 0.015,
+                    wobbleAmount: 15 + Math.random() * 30,
+                    wobbleOffset: Math.random() * Math.PI * 2,
+                    rotation: (Math.random() - 0.5) * 0.5,
+                    rotationSpeed: (Math.random() - 0.5) * 0.01,
+                };
+            }
+
+            // Initialiser
+            function init() {
+                hearts = [];
+                const count = getHeartCount();
+                for (let i = 0; i < count; i++) {
+                    hearts.push(createHeart(false));
+                }
+            }
+
+            // Dessiner un cœur avec le contexte 2D
+            function drawHeart(heart, time) {
+                ctx.save();
+
+                // Position avec oscillation (wobble)
+                const wobbleX = Math.sin(time * heart.wobbleSpeed + heart.wobbleOffset) * heart.wobbleAmount;
+                const drawX = heart.x + wobbleX;
+                const drawY = heart.y;
+
+                ctx.translate(drawX, drawY);
+                ctx.rotate(heart.rotation);
+
+                // Dessiner le caractère cœur
+                ctx.font = `${heart.size}px serif`;
+                ctx.fillStyle = heart.color;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(heart.char, 0, 0);
+
+                ctx.restore();
+            }
+
+            // Boucle d'animation
+            let lastTime = 0;
+            function animate(timestamp) {
+                const time = timestamp || 0;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                hearts.forEach((heart, i) => {
+                    // Mise à jour position
+                    heart.y += heart.speedY;
+                    heart.x += heart.speedX;
+                    heart.rotation += heart.rotationSpeed;
+
+                    // Si le cœur sort en bas, le replacer en haut
+                    if (heart.y > canvas.height + 30) {
+                        hearts[i] = createHeart(true);
+                    }
+
+                    // Si le cœur sort latéralement, le ramener
+                    if (heart.x < -50) heart.x = canvas.width + 50;
+                    if (heart.x > canvas.width + 50) heart.x = -50;
+
+                    drawHeart(heart, time);
+                });
+
+                animationId = requestAnimationFrame(animate);
+            }
+
+            init();
+            animate();
+
+            // Réinitialiser au redimensionnement
+            window.addEventListener('resize', () => {
+                init();
+            });
+        })();
+
+        /* ============================================
+           3. BOUTON MUSIQUE
+           ============================================ */
+        (() => {
+            const musicBtn = document.getElementById('musicBtn');
+            const musicIcon = document.getElementById('musicIcon');
+            const bgMusic = document.getElementById('bgMusic');
+            let isPlaying = false;
+
+            // Volume initial doux
+            bgMusic.volume = 0.35;
+
+            musicBtn.addEventListener('click', () => {
+                if (isPlaying) {
+                    bgMusic.pause();
+                    musicIcon.className = 'fas fa-volume-xmark';
+                    musicBtn.classList.remove('playing');
+                    musicBtn.setAttribute('aria-label', 'Activer la musique');
+                } else {
+                    bgMusic.play().then(() => {
+                        musicIcon.className = 'fas fa-volume-high';
+                        musicBtn.classList.add('playing');
+                        musicBtn.setAttribute('aria-label', 'Couper la musique');
+                    }).catch(err => {
+                        console.log('Lecture audio bloquée par le navigateur :', err);
+                    });
+                }
+                isPlaying = !isPlaying;
+            });
+        })();
+
+        /* ============================================
+           4. BOUTON INDICE SUPPLÉMENTAIRE
+           ============================================ */
+        (() => {
+            const hintBtn = document.getElementById('hintBtn');
+            const hintContent = document.getElementById('hintContent');
+
+            hintBtn.addEventListener('click', () => {
+                const isVisible = hintContent.classList.contains('visible');
+
+                if (isVisible) {
+                    hintContent.classList.remove('visible');
+                    hintBtn.classList.remove('active');
+                } else {
+                    hintContent.classList.add('visible');
+                    hintBtn.classList.add('active');
+                }
+            });
+        })();
+
+        /* ============================================
+           5. EFFET RIPPLE SUR LE BOUTON PRINCIPAL
+           ============================================ */
+        (() => {
+            const btn = document.querySelector('.card-btn');
+            if (!btn) return;
+
+            btn.addEventListener('click', function(e) {
+                // Petit effet de vibration haptique si supporté
+                if (navigator.vibrate) {
+                    navigator.vibrate(30);
+                }
+            });
+        })();
+
+        /* ============================================
+           6. SAUVEGARDE DE PROGRESSION (localStorage)
+              Optionnel — décommente si tu veux
+              tracker l'avancement du joueur
+           ============================================ */
+        /*
+        (() => {
+            const STEP_KEY = 'valentine_hunt_step';
+            const CURRENT_STEP = 1; // ← Modifie selon l'étape
+
+            // Sauvegarder la progression
+            const savedStep = parseInt(localStorage.getItem(STEP_KEY) || '0');
+            if (CURRENT_STEP > savedStep) {
+                localStorage.setItem(STEP_KEY, CURRENT_STEP.toString());
+            }
+        })();
+        */
+
+    </script>
+
+</body>
+</html>
